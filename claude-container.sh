@@ -8,11 +8,41 @@ set -e
 # Get workspace root directory
 WORKSPACE_ROOT="$(pwd)"
 
-# Set default path to ${HOME} in workspace
-export CLAUDE_BIND_DIR="${CLAUDE_BIND_DIR:-$HOME}"
+# Set default path to .claude-config in workspace
+export CLAUDE_BIND_DIR="${CLAUDE_BIND_DIR:-$WORKSPACE_ROOT/.claude-config}"
 
 echo "🤖 Connecting to Claude Code devcontainer..."
 echo "💾 Data location: $CLAUDE_BIND_DIR"
+
+# Prepare bind mount directories
+echo "🔧 Preparing bind mount directories..."
+if [ ! -d "$CLAUDE_BIND_DIR" ]; then
+  echo "📁 Creating directory: $CLAUDE_BIND_DIR"
+  mkdir -p "$CLAUDE_BIND_DIR/.claude"
+  touch "$CLAUDE_BIND_DIR/.claude.json"
+  echo '{}' > "$CLAUDE_BIND_DIR/.claude.json"
+  echo "✅ Created bind mount directories"
+
+  # Add to .gitignore if not already present
+  if [ -f ".gitignore" ] && ! grep -q "^\.claude-config" .gitignore; then
+    echo "" >> .gitignore
+    echo "# Claude Code configuration" >> .gitignore
+    echo ".claude-config/" >> .gitignore
+    echo "📝 Added .claude-config to .gitignore"
+  fi
+else
+  echo "✅ Bind mount directory already exists"
+  # Ensure required files exist
+  if [ ! -d "$CLAUDE_BIND_DIR/.claude" ]; then
+    mkdir -p "$CLAUDE_BIND_DIR/.claude"
+    echo "📁 Created .claude directory"
+  fi
+  if [ ! -f "$CLAUDE_BIND_DIR/.claude.json" ]; then
+    touch "$CLAUDE_BIND_DIR/.claude.json"
+    echo '{}' > "$CLAUDE_BIND_DIR/.claude.json"
+    echo "📄 Created .claude.json file"
+  fi
+fi
 
 # Check if devcontainer is running
 echo "📦 Checking devcontainer status..."
